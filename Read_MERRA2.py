@@ -167,3 +167,20 @@ for f in data:
     if f.endswith('.nc'):
         conc_df = get_one_day(f)
         month_df = pd.concat([month_df, conc_df], ignore_index=True)
+
+month_df.shape
+
+month_grouped = month_df.groupby(['lat', 'lon']).agg({'average_temp': 'mean',
+                                                      'min_daily_temp': ['mean', 'min'],
+                                                      'average_temp_with_windchill': 'mean',
+                                                      'min_daily_temp_with_windchill': ['mean', 'min']})
+                                                      #'hrs_below_freezing': ['mean','sum'],
+                                                      #'day_below_freezing': 'sum'})
+
+#month_grouped.head()
+month_grouped.columns = ['average_temp', 
+                        'average_min_daily_temp', 'min_min_daily_temp',
+                        'average_windchill',
+                        'average_min_daily_windchill', 'min_min_daily_windchill']
+    
+month_final = month_grouped.reset_index()

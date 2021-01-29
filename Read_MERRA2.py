@@ -184,3 +184,6 @@ month_grouped.columns = ['average_temp',
                         'average_min_daily_windchill', 'min_min_daily_windchill']
     
 month_final = month_grouped.reset_index()
+
+month_final.to_csv('12-2020 temp and wind.csv')
+

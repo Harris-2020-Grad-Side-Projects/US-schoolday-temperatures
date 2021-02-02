@@ -33,8 +33,9 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/')
-data_folder = 'test_MERRA2_data'
+data_folder = 'Data/test_MERRA2_data'
 data = os.listdir(data_folder) #some object to pass in the filenames
+
 
 # thinking I'll restructure this to be a df with ea time zone as a row and cols:
 # lon_west_boundry, lon_east_boundry, utc_time_delta
@@ -185,5 +186,5 @@ month_grouped.columns = ['average_temp',
     
 month_final = month_grouped.reset_index()
 
-month_final.to_csv('12-2020 temp and wind.csv')
+month_final.to_csv('Data/12-2020 temp and wind.csv')
 

@@ -160,7 +160,7 @@ def get_one_day(filename):
     
     return final_df
 
-def agg_month()
+def agg_month():
     month_df = pd.DataFrame(columns=['lat', 'lon', 'average_temp', 'min_daily_temp', 
                                     'average_temp_with_windchill', 'min_daily_temp_with_windchill'])
                             

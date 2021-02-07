@@ -35,7 +35,7 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/')
 data_folder = 'Data/MERRA2_data'
 data = os.listdir(data_folder) #object to pass in the filenames
-
+DATE = '2020-12'
 
 # thinking I'll restructure this to be a df with ea time zone as a row and cols:
 # lon_west_boundry, lon_east_boundry, utc_time_delta
@@ -160,31 +160,34 @@ def get_one_day(filename):
     
     return final_df
 
-
-month_df = pd.DataFrame(columns=['lat', 'lon', 'average_temp', 'min_daily_temp', 
-                                 'average_temp_with_windchill', 'min_daily_temp_with_windchill'])
+def agg_month()
+    month_df = pd.DataFrame(columns=['lat', 'lon', 'average_temp', 'min_daily_temp', 
+                                    'average_temp_with_windchill', 'min_daily_temp_with_windchill'])
                             
-for f in data:
-    if f.endswith('.nc'):
-        conc_df = get_one_day(f)
-        month_df = pd.concat([month_df, conc_df], ignore_index=True)
+    for f in data:
+        if f.endswith('.nc'):
+            conc_df = get_one_day(f)
+            month_df = pd.concat([month_df, conc_df], ignore_index=True)
 
-month_df.shape
+    #month_df.shape #debug
 
-month_grouped = month_df.groupby(['lat', 'lon']).agg({'average_temp': 'mean',
-                                                      'min_daily_temp': ['mean', 'min'],
-                                                      'average_temp_with_windchill': 'mean',
-                                                      'min_daily_temp_with_windchill': ['mean', 'min']})
-                                                      #'hrs_below_freezing': ['mean','sum'],
-                                                      #'day_below_freezing': 'sum'})
+    month_grouped = month_df.groupby(['lat', 'lon']).agg({'average_temp': 'mean',
+                                                        'min_daily_temp': ['mean', 'min'],
+                                                        'average_temp_with_windchill': 'mean',
+                                                        'min_daily_temp_with_windchill': ['mean', 'min']})
+                                                        #'hrs_below_freezing': ['mean','sum'],
+                                                        #'day_below_freezing': 'sum'})
 
-#month_grouped.head()
-month_grouped.columns = ['average_temp', 
-                        'average_min_daily_temp', 'min_min_daily_temp',
-                        'average_windchill',
-                        'average_min_daily_windchill', 'min_min_daily_windchill']
+    #month_grouped.head() #debug
+    month_grouped.columns = ['average_temp', 
+                            'average_min_daily_temp', 'min_min_daily_temp',
+                            'average_windchill',
+                            'average_min_daily_windchill', 'min_min_daily_windchill']
     
-month_final = month_grouped.reset_index()
+    month_final = month_grouped.reset_index()
 
-month_final.to_csv('Data/2020-12 temp and wind.csv')
+    month_final.to_csv('Data/{} temp and wind.csv'.format(DATE))
+
+if __name__ == "__main__":
+    agg_month()
 

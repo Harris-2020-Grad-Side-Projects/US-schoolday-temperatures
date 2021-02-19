@@ -33,9 +33,10 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/')
-data_folder = 'Data/MERRA2_data'
+data_folder = 'Data/MERRA2_Jan19'
+#'Data/MERRA2_data'
 data = os.listdir(data_folder) #object to pass in the filenames
-DATE = '2020-12'
+DATE = '2019-01'
 
 # thinking I'll restructure this to be a df with ea time zone as a row and cols:
 # lon_west_boundry, lon_east_boundry, utc_time_delta

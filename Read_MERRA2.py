@@ -4,7 +4,7 @@ https://disc.gsfc.nasa.gov/datasets/M2T1NXSLV_5.12.4/summary
 
 Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4
 Download Method: Get File Subsets using the GES DISC Subsetter
-Date Range: 2020-12-01 to 2020-12-31
+Date Range: 2018-12-21 to 2019-03-19 #For "Winter"
 Region: -125.244, 24.961, -67.061, 49.395 (Search and Crop)
 Time of Day: 11:30 to 23:30
 Variables:
@@ -19,6 +19,10 @@ next: 50 lists one for each lat
 inner: 95 temperatures one for each lon
      
 Current code converts to pandas df, breaks into time zones, subsets to school hours only and aggregates
+Code also calculates windspeed, uses this to calculate windchill, and adds this variable 
+
+Output is a dataset with aggrogated temperature data for each lat-lon coordinate 
+from the hours of 8:30AM-3:30PM in each US timezone
 '''
 
 import pandas as pd
@@ -33,13 +37,15 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/')
-data_folder = 'Data/MERRA2_Jan19'
-#'Data/MERRA2_data'
+data_folder = 'Data/MERRA2_Winter18-19'
+DATE = 'Winter 2018-19'
+
+
 data = os.listdir(data_folder) #object to pass in the filenames
-DATE = '2019-01'
 
 # thinking I'll restructure this to be a df with ea time zone as a row and cols:
 # lon_west_boundry, lon_east_boundry, utc_time_delta
+# lat lon for each timezone
 pacific_lon = [-125, -114] #ish
 mountain_lon = [-114, -102] #ish
 central_lon = [-102, -85.5] #ish

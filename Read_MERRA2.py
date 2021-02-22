@@ -1,6 +1,11 @@
 '''
 Data from:
 https://disc.gsfc.nasa.gov/datasets/M2T1NXSLV_5.12.4/summary 
+Citation:
+Global Modeling and Assimilation Office (GMAO) (2015), MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,
+Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4, Greenbelt, MD, USA, 
+Goddard Earth Sciences Data and Information Services Center (GES DISC), Accessed: [2-19-2021], 
+10.5067/VJAFPLI1CSIV
 
 Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4
 Download Method: Get File Subsets using the GES DISC Subsetter
@@ -37,8 +42,8 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
-data_folder = 'MERRA2_Jan19'
-DATE = 'test Jan' # for output filename
+data_folder = 'test_MERRA2_data'
+DATE = 'test' # for output filename
 
 
 data = os.listdir(data_folder) #object to pass in the filenames
@@ -78,6 +83,7 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
     
     output: pandas df with values for 8:30AM-3:30PM local time for one timezone
     '''
+    # get the date from the filename (needed for time subset bc the time col has date and time)
     date = filename[-15:-11]+"-"+filename[-11:-9]+"-"+filename[-9:-7]
     # subset to one time zone
     time_zone_df = df[(df["lon"]>= time_zone_lons[0]) & (df["lon"]< time_zone_lons[1])]
@@ -95,14 +101,14 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
     time_zone_df = time_zone_df[(time_zone_df["local_time"]>= school_str) & 
                                 (time_zone_df["local_time"]<= school_end)]
     
-    # check
+    # spot-check
     assert time_zone_df.iloc[12]['local_time'] == pd.to_datetime('{} 12:30:00'.format(date))
 
     return time_zone_df
 
 def add_alt_temps(df):
     '''
-    adds wind speed, wind chill and temperature in F
+    adds wind speed, wind chill, temperature in F and hrs below freezing
     '''
     
     # add wind speed
@@ -117,9 +123,9 @@ def add_alt_temps(df):
     df['with_windchill_(F)'] = np.where(
                                     (df['temperature_(F)']<= 50) & (df['wind_speed_(mph)']>=3), 
                                     (35.74 
-                                        + 0.6215*df['temperature_(F)'] 
-                                        - 35.75*df['wind_speed_(mph)']**0.16
-                                        + 0.4275*df['temperature_(F)']*df['wind_speed_(mph)']**0.16),
+                                     + 0.6215*df['temperature_(F)'] 
+                                     - 35.75*df['wind_speed_(mph)']**0.16
+                                     + 0.4275*df['temperature_(F)']*df['wind_speed_(mph)']**0.16),
                                     df['temperature_(F)'])
     
     # add dummy for hr below freezing
@@ -127,7 +133,33 @@ def add_alt_temps(df):
     # df['below_freezing'] = df['below_freezing'].astype(int)
     
     return df
-    
+
+# Notes -not yet integrated at all
+def heat_index(df):
+    #equation from https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
+    #multiple adjustments -not yet shown here!
+    '''
+    HI = -42.379 + 2.04901523*T + 10.14333127*RH - .22475541*T*RH - .00683783*T*T - .05481717*RH*RH + .00122874*T*T*RH + .00085282*T*RH*RH - .00000199*T*T*RH*RH
+    where T is temperature in degrees F and RH is relative humidity in percent.
+
+    dataset has QV2M 2-meter specific humidity kg kg-1
+    and has
+    T2MDEW = dew point temperature at 2 m
+    T2MWET = wet bulb temperature at 2 m
+    '''
+
+    df['with_heatindex_(F)'] = np.where(df['temperature_(F)']>= 80,
+                                        (-42.379
+                                         +2.04901523*df['temperature_(F)'] 
+                                         + 10.14333127*RH 
+                                         - .22475541*df['temperature_(F)']*RH 
+                                         - .00683783*df['temperature_(F)']*df['temperature_(F)'] 
+                                         - .05481717*RH*RH 
+                                         + .00122874*df['temperature_(F)']*df['temperature_(F)']*RH 
+                                         + .00085282*df['temperature_(F)']*RH*RH 
+                                         - .00000199*df['temperature_(F)']*df['temperature_(F)']*RH*RH),
+                                        df['temperature_(F)'])
+
 
 def aggrogate(df):
     
@@ -175,9 +207,12 @@ def get_one_day(filename):
     
     return final_df
 
+
+
+
 def agg_month():
     '''
-    Aggrogates the entire set of files in a folder
+    Aggrogates the entire set of files in a folder -global varaible "data"
     '''
     month_df = pd.DataFrame(columns=['lat', 'lon', 'average_temp', 'min_daily_temp', 
                                     'average_temp_with_windchill', 'min_daily_temp_with_windchill'])
@@ -206,7 +241,7 @@ def agg_month():
     month_final = month_grouped.reset_index()
 
     month_final.to_csv('{} temp and wind.csv'.format(DATE))
-    return 
+ 
 
 if __name__ == "__main__":
     agg_month()

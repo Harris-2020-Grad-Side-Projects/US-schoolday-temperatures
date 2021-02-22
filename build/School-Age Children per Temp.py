@@ -7,6 +7,7 @@ https://doi.org/10.18128/D010.V11.0
 '''
 
 #census boundries-need, or conty boundries needed
+#CA counties from https://catalog.data.gov/dataset/tiger-line-shapefile-2016-state-california-current-county-subdivision-state-based
 
 '''
 Instead do per county
@@ -23,11 +24,17 @@ import os
 import requests
 import pandas as pd
 import geopandas as gpd
+import matplotlib.pyplot as plt
 
-os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures')
-path = os.path.join(os.getcwd(), 'Data')
+os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
+#path = os.path.join(os.getcwd(), 'Data')
 #links to the data: -good news, ea state is same format with statefip at end! -for CA -06.csv
 CA_url = 'https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/asrh/cc-est2019-agesex-06.csv'
+filename = 'CA_pop.csv'
+
+date = 'Jan 2019'
+temp_filename = '{} temp and wind.csv'.format(date)
+
 
 def build_url(statefip):
     url = 'https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/asrh/cc-est2019-agesex-{}.csv'.format(statefip)
@@ -51,11 +58,49 @@ def download_data(url, filename):
     with open(filename, open_as) as ofile:
         ofile.write(output)
 
-def read_data(path, filename):
-    if filename.endswith('.csv'):
-        df = pd.read_csv(os.path.join(path, filename))
-    elif filename.endswith('.xls'):
-        df = pd.read_excel(os.path.join(path, filename))
-    else:
-        return 'unexpected file type in read_data'
-    return df
+download_data(CA_url, filename)
+df = pd.read_csv(filename)
+
+
+df.columns
+df_age = df[['STATE', 'COUNTY', 'STNAME', 'CTYNAME', 'YEAR', 
+            'POPESTIMATE','AGE513_TOT', 'AGE1417_TOT']]
+# keep just
+# 11 = 7/1/2018 population estimate and 12 = 7/1/2019 population estimate
+#df_age_19 = df_age[(df_age['YEAR'] == 11) | (df_age['YEAR'] == 12)]
+#lets just do 19 for now
+df_age_19 = df_age[df_age['YEAR'] == 12]
+
+#add leading 0s to match county col COUNTYFP
+df_age_19['COUNTY'] = df_age_19['COUNTY'].astype(str)
+df_age_19['COUNTY'] = df_age_19['COUNTY'].apply(lambda x: x.zfill(3))
+df_age_19['COUNTY'].head()
+
+counties = gpd.read_file('tl_2016_06_cousub/tl_2016_06_cousub.shp')
+
+counties.crs
+# {'init': 'epsg:4269'}
+counties.columns
+counties['COUNTYFP'].head()
+
+county_age = counties.merge(df_age_19, left_on = 'COUNTYFP', right_on = 'COUNTY', how = 'outer')
+
+county_age.head()
+county_age.crs
+temp_gdf.crs
+temp_df = pd.read_csv(temp_filename)
+temp_gdf = gpd.GeoDataFrame(temp_df, 
+                            geometry=gpd.points_from_xy(temp_df['lon'], temp_df['lat']),
+                            crs = {'init': 'epsg:4269'})
+
+sjoined = gpd.sjoin(temp_gdf, county_age, op='within')
+sjoined.head()
+
+#quick check
+fig, ax = plt.subplots(figsize=(8,6))
+#contenental_states.plot(ax=ax, color = 'none', edgecolor='black')
+county_age.plot(ax=ax, column = 'AGE513_TOT' )
+sjoined.plot(ax=ax, alpha = 0.2)
+plt.show()
+
+

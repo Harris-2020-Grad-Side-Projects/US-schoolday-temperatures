@@ -37,14 +37,13 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/')
-data_folder = 'Data/MERRA2_Winter18-19'
-DATE = 'Winter 2018-19'
+data_folder = 'Data/MERRA2_data'
+DATE = 'Dec 2020' # for output filename
 
 
 data = os.listdir(data_folder) #object to pass in the filenames
 
-# thinking I'll restructure this to be a df with ea time zone as a row and cols:
-# lon_west_boundry, lon_east_boundry, utc_time_delta
+
 # lat lon for each timezone
 pacific_lon = [-125, -114] #ish
 mountain_lon = [-114, -102] #ish
@@ -152,8 +151,14 @@ def aggrogate(df):
     return final
 
 
-# will want a way to run these more sucinctly
 def get_one_day(filename):
+    '''
+    takes an ns file, converts to pandas df (using ns_to_df)
+    breaks into 4 dfs, one for each timezone, using global variables for lon boundries and 
+    time delta from UTC
+    adds variables using (something -fn name needs updating)
+    aggrogates to a df for one day
+    '''
     df = ns_to_df(filename)
 
     pst = get_schoolhours(filename, df, pacific_lon, time_deltas['pacific'])
@@ -168,6 +173,9 @@ def get_one_day(filename):
     return final_df
 
 def agg_month():
+    '''
+    Aggrogates the entire set of files in a folder
+    '''
     month_df = pd.DataFrame(columns=['lat', 'lon', 'average_temp', 'min_daily_temp', 
                                     'average_temp_with_windchill', 'min_daily_temp_with_windchill'])
                             

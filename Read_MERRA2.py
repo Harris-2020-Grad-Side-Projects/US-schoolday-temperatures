@@ -36,9 +36,9 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 
 ####Global Variables
-os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/')
-data_folder = 'Data/MERRA2_data'
-DATE = 'Dec 2020' # for output filename
+os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
+data_folder = 'MERRA2_Jan19'
+DATE = 'test Jan' # for output filename
 
 
 data = os.listdir(data_folder) #object to pass in the filenames
@@ -57,7 +57,7 @@ def ns_to_df(filename):
     '''
     f = os.path.join(data_folder, filename)
     date = f[-15:-11]+"-"+f[-11:-9]+"-"+f[-9:-7]
-    print(date) # debug
+    print(date) # debug -see which file is being run -> verify working
     
     # read in netcdf data
     # https://stackoverflow.com/questions/14035148/import-netcdf-file-to-pandas-dataframe
@@ -100,7 +100,10 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
 
     return time_zone_df
 
-def something(df):
+def add_alt_temps(df):
+    '''
+    adds wind speed, wind chill and temperature in F
+    '''
     
     # add wind speed
     # https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20calculate%20and%20plot%20wind%20speed%20using%20MERRA-2%20wind%20component%20data%20using%20Python#!
@@ -120,7 +123,7 @@ def something(df):
                                     df['temperature_(F)'])
     
     # add dummy for hr below freezing
-    # df['below_freezing'] = df['TS'].apply(lambda x: 1 if x <= 273.15 else 0)
+    df['below_freezing'] = df['TS'].apply(lambda x: 1 if x <= 273.15 else 0)
     # df['below_freezing'] = df['below_freezing'].astype(int)
     
     return df
@@ -134,12 +137,12 @@ def aggrogate(df):
     #return time_zone_df # debug
        
     grouped = df.groupby(['lat', 'lon']).agg({'temperature_(F)': ['mean', 'min'], 
-                                              'with_windchill_(F)': ['mean', 'min']})
-                                                         # 'below_freezing': 'sum'})
+                                              'with_windchill_(F)': ['mean', 'min'],
+                                                          'below_freezing': 'sum'})
     
     grouped.columns = ['average_temp', 'min_daily_temp', 
-                       'average_temp_with_windchill', 'min_daily_temp_with_windchill']
-                       #'hrs_below_freezing']
+                       'average_temp_with_windchill', 'min_daily_temp_with_windchill',
+                       'hrs_below_freezing']
     
     final = grouped.reset_index()
     
@@ -156,7 +159,7 @@ def get_one_day(filename):
     takes an ns file, converts to pandas df (using ns_to_df)
     breaks into 4 dfs, one for each timezone, using global variables for lon boundries and 
     time delta from UTC
-    adds variables using (something -fn name needs updating)
+    adds variables using (add_alt_temps)
     aggrogates to a df for one day
     '''
     df = ns_to_df(filename)
@@ -168,7 +171,7 @@ def get_one_day(filename):
     
     conc_df = pd.concat([pst, mst, cst, est], ignore_index=True)
     
-    final_df = aggrogate(something(conc_df))
+    final_df = aggrogate(add_alt_temps(conc_df))
     
     return final_df
 
@@ -189,19 +192,21 @@ def agg_month():
     month_grouped = month_df.groupby(['lat', 'lon']).agg({'average_temp': 'mean',
                                                         'min_daily_temp': ['mean', 'min'],
                                                         'average_temp_with_windchill': 'mean',
-                                                        'min_daily_temp_with_windchill': ['mean', 'min']})
-                                                        #'hrs_below_freezing': ['mean','sum'],
+                                                        'min_daily_temp_with_windchill': ['mean', 'min'],
+                                                        'hrs_below_freezing': ['mean','sum']})
                                                         #'day_below_freezing': 'sum'})
 
     #month_grouped.head() #debug
     month_grouped.columns = ['average_temp', 
                             'average_min_daily_temp', 'min_min_daily_temp',
                             'average_windchill',
-                            'average_min_daily_windchill', 'min_min_daily_windchill']
+                            'average_min_daily_windchill', 'min_min_daily_windchill',
+                            'avg_hrs_below_fr', 'total_hr_below_fr']
     
     month_final = month_grouped.reset_index()
 
-    month_final.to_csv('Data/{} temp and wind.csv'.format(DATE))
+    month_final.to_csv('{} temp and wind.csv'.format(DATE))
+    return 
 
 if __name__ == "__main__":
     agg_month()

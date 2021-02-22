@@ -87,7 +87,7 @@ county_age = counties.merge(df_age_19, left_on = 'COUNTYFP', right_on = 'COUNTY'
 
 county_age.head()
 county_age.crs
-temp_gdf.crs
+
 temp_df = pd.read_csv(temp_filename)
 temp_gdf = gpd.GeoDataFrame(temp_df, 
                             geometry=gpd.points_from_xy(temp_df['lon'], temp_df['lat']),
@@ -96,11 +96,13 @@ temp_gdf = gpd.GeoDataFrame(temp_df,
 sjoined = gpd.sjoin(temp_gdf, county_age, op='within')
 sjoined.head()
 
+test_grouped = sjoined.groupby('COUNTYFP').mean()
+test_grouped = test_grouped[temp_df.columns]
 #quick check
 fig, ax = plt.subplots(figsize=(8,6))
 #contenental_states.plot(ax=ax, color = 'none', edgecolor='black')
-county_age.plot(ax=ax, column = 'AGE513_TOT' )
-sjoined.plot(ax=ax, alpha = 0.2)
+county_age.plot(ax=ax, column = 'AGE513_TOT')
+#sjoined.plot(ax=ax, alpha = 0.2)
 plt.show()
 
 

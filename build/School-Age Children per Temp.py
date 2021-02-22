@@ -20,4 +20,11 @@ os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
 data = open('usa_00005.dat', 'r')
 data3 = data.read()
 
-data2 = pd.read_csv('usa_00005.dat')
+#data2 = pd.read_csv('usa_00005.dat')
+#Need to do in R
+'''
+if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
+
+ddi <- read_ipums_ddi("usa_00005.xml")
+data <- read_ipums_micro(ddi)
+'''

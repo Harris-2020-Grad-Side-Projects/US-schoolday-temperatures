@@ -86,7 +86,7 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
     # get the date from the filename (needed for time subset bc the time col has date and time)
     date = filename[-15:-11]+"-"+filename[-11:-9]+"-"+filename[-9:-7]
     # subset to one time zone
-    time_zone_df = df[(df["lon"]>= time_zone_lons[0]) & (df["lon"]< time_zone_lons[1])]
+    time_zone_df = df[(df["lon"] >= time_zone_lons[0]) & (df["lon"] < time_zone_lons[1])]
     
     # add local time 
     # throws a warning (both ways shown here)
@@ -98,8 +98,8 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
     school_str = pd.to_datetime('{} 8:30:00'.format(date))
     school_end = pd.to_datetime('{} 15:30:00'.format(date)) 
 
-    time_zone_df = time_zone_df[(time_zone_df["local_time"]>= school_str) & 
-                                (time_zone_df["local_time"]<= school_end)]
+    time_zone_df = time_zone_df[(time_zone_df["local_time"] >= school_str) & 
+                                (time_zone_df["local_time"] <= school_end)]
     
     # spot-check
     assert time_zone_df.iloc[12]['local_time'] == pd.to_datetime('{} 12:30:00'.format(date))
@@ -113,10 +113,10 @@ def add_alt_temps(df):
     
     # add wind speed
     # https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20calculate%20and%20plot%20wind%20speed%20using%20MERRA-2%20wind%20component%20data%20using%20Python#!
-    df['wind_speed_(mph)'] = np.sqrt(df['U2M']**2+df['V2M']**2)*(2.236942)
+    df['wind_speed_(mph)'] = np.sqrt(df['U2M']**2 + df['V2M']**2)*(2.236942)
     
     # add temp in F
-    df['temperature_(F)'] = (df['TS'] - 273.15)* 1.8000 + 32.00
+    df['temperature_(F)'] = (df['TS'] - 273.15)*1.8000 + 32.00
     
     # add wind chill (F) 
     # windchill only if temperature is 50F or below and wind is 3mph or faster
@@ -148,9 +148,9 @@ def heat_index(df):
     T2MWET = wet bulb temperature at 2 m
     '''
 
-    df['with_heatindex_(F)'] = np.where(df['temperature_(F)']>= 80,
+    df['with_heatindex_(F)'] = np.where(df['temperature_(F)'] >= 80,
                                         (-42.379
-                                         +2.04901523*df['temperature_(F)'] 
+                                         + 2.04901523*df['temperature_(F)'] 
                                          + 10.14333127*RH 
                                          - .22475541*df['temperature_(F)']*RH 
                                          - .00683783*df['temperature_(F)']*df['temperature_(F)'] 

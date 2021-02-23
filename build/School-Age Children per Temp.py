@@ -97,12 +97,38 @@ sjoined = gpd.sjoin(temp_gdf, county_age, op='within')
 sjoined.head()
 
 test_grouped = sjoined.groupby('COUNTYFP').mean()
-test_grouped = test_grouped[temp_df.columns]
+test_grouped = test_grouped[temp_df.columns[3:8]]
+#test_grouped = test_grouped.drop(columns = ['Unnamed: 0', 'lat', 'lon'])
+test_grouped.reset_index(inplace = True)
+
+
+final_df = county_age.merge(test_grouped, on = 'COUNTYFP', how = 'outer')
+
+
+#deal with missing counties!
+#1)get centroid for county
+#2)use point that has shortest euclydian distnace to centroid
+    #scipy.spatial.distance.euclidean() -that's between arrays
+    #can alsu just use math
+#https://www.techtrekking.com/how-to-calculate-euclidean-and-manhattan-distance-by-using-python/
+x1 = [1,1]
+x2 = [2,9]
+eudistance =math.sqrt(math.pow(x1[0]-x2[0],2) + math.pow(x1[1]-x2[1],2) )
+print("eudistance Using math ", eudistance)
+
+# nope, its waaaaaaay easier!
+# https://stackoverflow.com/questions/63722124/get-distance-between-two-points-in-geopandas
+temp_gdf['geometry'][0].distance(temp_gdf['geometry'][1])
+
+
+#Alternatively: Get new temperature reagions -contorform
+# get centroid of county, and do centroind within to det temperature for county
+
 #quick check
 fig, ax = plt.subplots(figsize=(8,6))
 #contenental_states.plot(ax=ax, color = 'none', edgecolor='black')
-county_age.plot(ax=ax, column = 'AGE513_TOT')
-#sjoined.plot(ax=ax, alpha = 0.2)
+final_df.plot(ax=ax, column = 'average_windchill')
+sjoined.plot(ax=ax, alpha = 0.7)
 plt.show()
 
 

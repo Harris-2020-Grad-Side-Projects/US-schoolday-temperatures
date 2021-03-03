@@ -105,20 +105,29 @@ test_grouped.reset_index(inplace = True)
 final_df = county_age.merge(test_grouped, on = 'COUNTYFP', how = 'outer')
 
 
-#deal with missing counties!
-#1)get centroid for county
-#2)use point that has shortest euclydian distnace to centroid
+# deal with missing counties!
+# 1)get centroid for county
+# https://geopandas.readthedocs.io/en/latest/docs/reference/api/geopandas.GeoSeries.centroid.html
+final_df['centroid'] = final_df['geometry'].centroid
+
+
+# 2)use point that has shortest euclydian distnace to centroid
     #scipy.spatial.distance.euclidean() -that's between arrays
     #can alsu just use math
-#https://www.techtrekking.com/how-to-calculate-euclidean-and-manhattan-distance-by-using-python/
+# https://www.techtrekking.com/how-to-calculate-euclidean-and-manhattan-distance-by-using-python/
 x1 = [1,1]
 x2 = [2,9]
 eudistance =math.sqrt(math.pow(x1[0]-x2[0],2) + math.pow(x1[1]-x2[1],2) )
 print("eudistance Using math ", eudistance)
 
-# nope, its waaaaaaay easier!
+# nope, it's waaaaaaay easier!
 # https://stackoverflow.com/questions/63722124/get-distance-between-two-points-in-geopandas
 temp_gdf['geometry'][0].distance(temp_gdf['geometry'][1])
+
+#ok, but how best to search -which points to compare
+#can compere whole dataset and choose min but that'll take a while, must be a better way
+
+#also need to be able to find the counties with no temp -NA in that col?
 
 
 #Alternatively: Get new temperature reagions -contorform
@@ -127,8 +136,9 @@ temp_gdf['geometry'][0].distance(temp_gdf['geometry'][1])
 #quick check
 fig, ax = plt.subplots(figsize=(8,6))
 #contenental_states.plot(ax=ax, color = 'none', edgecolor='black')
-final_df.plot(ax=ax, column = 'average_windchill')
-sjoined.plot(ax=ax, alpha = 0.7)
+#final_df.plot(ax=ax, column = 'average_windchill')
+final_df['centroid'].plot(ax=ax)#, color = 'none', edgecolor='black')
+#sjoined.plot(ax=ax, alpha = 0.7)
 plt.show()
 
 

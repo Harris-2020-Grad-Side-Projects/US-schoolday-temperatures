@@ -136,9 +136,32 @@ def add_alt_temps(df):
 
 # Notes -not yet integrated at all
 def heat_index(df):
+    # python fns! https://unidata.github.io/MetPy/latest/api/generated/metpy.calc.html
+    #looks like I can do RH to HI or Dewpoint to HI (Dewpoint is availible)
+    # RH -> HI python https://github.com/beamerblvd/weatherlink-python/blob/master/weatherlink/utils.py 
+    # add temp in C
+    df['temperature_(C)'] = (df['TS'] - 273.15)
+
+    # add dewpoint in C
+    df['TDEW_C'] = (df['T2MDEW'] - 273.15)
+    
+    # add relative humidity RH
+    # multiple equations!
+    # https://earthscience.stackexchange.com/questions/16570/how-to-calculate-relative-humidity-from-temperature-dew-point-and-pressure
+    
+    #paper on it https://mathscinotes.com/wp-content/uploads/2016/03/87878main_H-937.pdf
+    # https://www.ajdesigner.com/phphumidity/dewpoint_equation_relative_humidity.php
+
+    # or -loose estimation
+    #-(Td - T)*5+100 = RH
+
     #equation from https://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
     #multiple adjustments -not yet shown here!
     '''
+    The equation used by the NWS to estimate heat index was developed by George Winterling in 1978, and is meant to be valid for temperatures of 80°F or higher, and relative humidity of 40% or more.
+    https://www.calculator.net/heat-index-calculator.html
+
+    ...
     HI = -42.379 + 2.04901523*T + 10.14333127*RH - .22475541*T*RH - .00683783*T*T - .05481717*RH*RH + .00122874*T*T*RH + .00085282*T*RH*RH - .00000199*T*T*RH*RH
     where T is temperature in degrees F and RH is relative humidity in percent.
 
@@ -147,6 +170,13 @@ def heat_index(df):
     T2MDEW = dew point temperature at 2 m
     T2MWET = wet bulb temperature at 2 m
     '''
+    #dewpoint to RH
+    # K -> C
+    # actual vapor presure = 6.11 * 10(7.5*T2MDEW(C)/(237.3+T2MDEW(C))) 
+    #divided by
+    # standard vapor presure = 6.11 * 10(7.5*TS(C)/(237.3+TS(C)))
+    
+
 
     df['with_heatindex_(F)'] = np.where(df['temperature_(F)'] >= 80,
                                         (-42.379

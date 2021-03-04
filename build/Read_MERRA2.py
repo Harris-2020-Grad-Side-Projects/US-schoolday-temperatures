@@ -10,7 +10,7 @@ Goddard Earth Sciences Data and Information Services Center (GES DISC), Accessed
 Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4
 Download Method: Get File Subsets using the GES DISC Subsetter
 Date Range: 2018-12-21 to 2019-03-19 #For "Winter"
-Region: -125.244, 24.961, -67.061, 49.395 (Search and Crop)
+#incorect- Region: -125.244, 24.961, -67.061, 49.395 (Search and Crop)
 Time of Day: 11:30 to 23:30
 Variables:
 TS = surface skin temperature
@@ -28,6 +28,22 @@ Code also calculates windspeed, uses this to calculate windchill, and adds this 
 
 Output is a dataset with aggrogated temperature data for each lat-lon coordinate 
 from the hours of 8:30AM-3:30PM in each US timezone
+
+
+
+for Winter-new
+Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4
+Download Method: Get File Subsets using the GES DISC Subsetter
+Date Range: 2018-12-21 to 2019-03-19
+Region: -125.068, 24.258, -66.533, 50.273 (Search and Crop)
+Time of Day: 11:30 to 23:30
+Variables:
+T2M = 2-meter air temperature
+T2MDEW = dew point temperature at 2 m
+TS = surface skin temperature
+U10M = 10-meter eastward wind
+V10M = 10-meter northward wind
+Format: netCDF
 '''
 
 import pandas as pd
@@ -42,8 +58,9 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
-data_folder = 'test_MERRA2_data'
-DATE = 'test' # for output filename
+data_folder = 'Winter-new'
+DATE = 'Winter-new' # for output filename
+
 
 
 data = os.listdir(data_folder) #object to pass in the filenames
@@ -113,20 +130,20 @@ def add_alt_temps(df):
     
     # add wind speed
     # https://disc.gsfc.nasa.gov/information/howto?title=How%20to%20calculate%20and%20plot%20wind%20speed%20using%20MERRA-2%20wind%20component%20data%20using%20Python#!
-    df['wind_speed_(mph)'] = np.sqrt(df['U2M']**2 + df['V2M']**2)*(2.236942)
+    df['wind_speed_(mph)'] = np.sqrt(df['U10M']**2 + df['V10M']**2)*(2.236942)
     
     # add temp in F
     df['temperature_(F)'] = (df['TS'] - 273.15)*1.8000 + 32.00
-    
+    df['2mtemperature_(F)'] = (df['T2M'] - 273.15)*1.8000 + 32.00
     # add wind chill (F) 
     # windchill only if temperature is 50F or below and wind is 3mph or faster
     df['with_windchill_(F)'] = np.where(
-                                    (df['temperature_(F)']<= 50) & (df['wind_speed_(mph)']>=3), 
+                                    (df['2mtemperature_(F)']<= 50) & (df['wind_speed_(mph)']>=3), 
                                     (35.74 
-                                     + 0.6215*df['temperature_(F)'] 
+                                     + 0.6215*df['2mtemperature_(F)'] 
                                      - 35.75*df['wind_speed_(mph)']**0.16
-                                     + 0.4275*df['temperature_(F)']*df['wind_speed_(mph)']**0.16),
-                                    df['temperature_(F)'])
+                                     + 0.4275*df['2mtemperature_(F)']*df['wind_speed_(mph)']**0.16),
+                                    df['2mtemperature_(F)'])
     
     # add dummy for hr below freezing
     df['below_freezing'] = df['TS'].apply(lambda x: 1 if x <= 273.15 else 0)
@@ -198,7 +215,7 @@ def aggrogate(df):
 
     #return time_zone_df # debug
        
-    grouped = df.groupby(['lat', 'lon']).agg({'temperature_(F)': ['mean', 'min'], 
+    grouped = df.groupby(['lat', 'lon']).agg({'2mtemperature_(F)': ['mean', 'min'], 
                                               'with_windchill_(F)': ['mean', 'min'],
                                                           'below_freezing': 'sum'})
     
@@ -238,7 +255,15 @@ def get_one_day(filename):
     return final_df
 
 
-
+filename = data[0]
+df = ns_to_df(filename)
+pst = get_schoolhours(filename, df, pacific_lon, time_deltas['pacific'])
+mst = get_schoolhours(filename, df, mountain_lon, time_deltas['mountain'])
+cst = get_schoolhours(filename, df, central_lon, time_deltas['central'])
+est = get_schoolhours(filename, df, eastern_lon, time_deltas['eastern'])
+conc_df = pd.concat([pst, mst, cst, est], ignore_index=True)
+df1 = add_alt_temps(conc_df)      
+df1.to_csv('one_day.csv')
 
 def agg_month():
     '''

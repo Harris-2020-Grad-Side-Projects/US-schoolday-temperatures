@@ -4,6 +4,7 @@ import metpy.calc
 from metpy.units import units
 import os
 import pandas as pd
+import numpy as np
 
 
 
@@ -13,17 +14,35 @@ df = pd.read_csv('one_day.csv')
 
 
 
-df['windchill'] = ''
-for index in range(len(df)):
-    temp = [df['2mtemperature_(F)'][index]]*units.degF
-    wind = [df['wind_speed_(mph)'][index]]*units.mph
+df['windchill_(F)'] = np.where(
+                                (df['2mtemperature_(F)']<= 50) & (df['wind_speed_(mph)']>=3), 
+                                    (metpy.calc.windchill([df['2mtemperature_(F)']]*units.degF,
+                                    [df['wind_speed_(mph)']]*units.mph).magnitude[0]),
+                                    df['2mtemperature_(F)'])
 
 
-    df['windchill'][index] = metpy.calc.windchill(temp, wind,
-                        face_level_winds = False,
-                        mask_undefined = True).magnitude[0]
+def relative_humidity(temp, dewpt):
+    return metpy.calc.relative_humidity_from_dewpoint(
+                            [temp]*units.K,
+                            [dewpt]*units.K).magnitude[0]
+
+# works but .apply might be better???
+# https://www.geeksforgeeks.org/python-pass-multiple-arguments-to-map-function/
+df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
+
+ # add heat index
+# heat index only if 80F or higher
+df['with_heatindex_(F)'] = np.where(
+                                (df['2mtemperature_(F)']>= 80), 
+                                    (metpy.calc.heat_index([df['2mtemperature_(F)']]*units.degF,
+                                    df['Relative_Humidity']).magnitude[0]),
+                                    df['2mtemperature_(F)'])
 
 df.to_csv('test.csv')
+
+#
+K = df['T2MDEW'][38851]
+(K - 273.15)*1.8000 + 32.00
 
 index = 15000
 temp = [df['2mtemperature_(F)'][index]]*units.degF

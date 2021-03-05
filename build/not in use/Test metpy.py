@@ -40,6 +40,8 @@ df['with_heatindex_(F)'] = np.where(
 
 df.to_csv('test.csv')
 
+metpy.calc.heat_index([df['2mtemperature_(F)'][1000]]*units.degF,
+                                    df['Relative_Humidity'][1000])
 #
 K = df['T2MDEW'][38851]
 (K - 273.15)*1.8000 + 32.00

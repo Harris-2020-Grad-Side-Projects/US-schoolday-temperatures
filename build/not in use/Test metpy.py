@@ -15,7 +15,7 @@ df = pd.read_csv('one_day.csv')
 
 
 df['windchill_(F)'] = np.where(
-                                (df['2mtemperature_(F)']<= 50) & (df['wind_speed_(mph)']>=3), 
+                                (df['2mtemperature_(F)'] <= 50) & (df['wind_speed_(mph)'] >= 3), 
                                     (metpy.calc.windchill([df['2mtemperature_(F)']]*units.degF,
                                     [df['wind_speed_(mph)']]*units.mph).magnitude[0]),
                                     df['2mtemperature_(F)'])
@@ -33,19 +33,24 @@ df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
  # add heat index
 # heat index only if 80F or higher
 df['with_heatindex_(F)'] = np.where(
-                                (df['2mtemperature_(F)']>= 80), 
-                                    (metpy.calc.heat_index([df['2mtemperature_(F)']]*units.degF,
-                                    df['Relative_Humidity']).magnitude[0]),
-                                    df['2mtemperature_(F)'])
+                                    (df['2mtemperature_(F)'] >= 80), 
+                                        (metpy.calc.heat_index([df['2mtemperature_(F)']]*units.degF,
+                                        [df['Relative_Humidity']]*units.dimensionless).magnitude[0]), 
+                                        df['2mtemperature_(F)'])
 
 df.to_csv('test.csv')
 
-metpy.calc.heat_index([df['2mtemperature_(F)'][1000]]*units.degF,
-                                    df['Relative_Humidity'][1000])
+for i in [1,2,3]:
+    print(metpy.calc.heat_index([df['2mtemperature_(F)'][i]]*units.degF,
+                                    [df['Relative_Humidity'][i]]*units.dimensionless).magnitude[0])
+
+metpy.calc.heat_index([81]*units.degF,
+                                    0.07)
 #
 K = df['T2MDEW'][38851]
 (K - 273.15)*1.8000 + 32.00
 
+relative_humidity(df['T2M'][38851],df['T2MDEW'][38851])
 index = 15000
 temp = [df['2mtemperature_(F)'][index]]*units.degF
 wind = [df['wind_speed_(mph)'][index]]*units.mph

@@ -9,32 +9,7 @@ Goddard Earth Sciences Data and Information Services Center (GES DISC), Accessed
 
 Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4
 Download Method: Get File Subsets using the GES DISC Subsetter
-Date Range: 2018-12-21 to 2019-03-19 #For "Winter"
-#incorect- Region: -125.244, 24.961, -67.061, 49.395 (Search and Crop)
-Time of Day: 11:30 to 23:30
-Variables:
-TS = surface skin temperature
-U2M = 2-meter eastward wind
-V2M = 2-meter northward wind
-Format: netCDF
-
-TS (temperature) is a list of lists of lists
-outer: 13 lists one for each time
-next: 50 lists one for each lat
-inner: 95 temperatures one for each lon
-     
-Current code converts to pandas df, breaks into time zones, subsets to school hours only and aggregates
-Code also calculates windspeed, uses this to calculate windchill, and adds this variable 
-
-Output is a dataset with aggrogated temperature data for each lat-lon coordinate 
-from the hours of 8:30AM-3:30PM in each US timezone
-
-
-
-for Winter-new
-Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4
-Download Method: Get File Subsets using the GES DISC Subsetter
-Date Range: 2018-12-21 to 2019-03-19
+Date Range: 2018-12-21 to 2019-03-19 #for Winter
 Region: -125.068, 24.258, -66.533, 50.273 (Search and Crop)
 Time of Day: 11:30 to 23:30
 Variables:
@@ -44,6 +19,13 @@ TS = surface skin temperature
 U10M = 10-meter eastward wind
 V10M = 10-meter northward wind
 Format: netCDF
+    
+Current code converts to pandas df, breaks into time zones, subsets to school hours only and aggregates
+Code also calculates windspeed, uses this to calculate windchill, and adds this variable 
+
+Output is a dataset with aggrogated temperature data for each lat-lon coordinate 
+from the hours of 8:30AM-3:30PM in each US timezone
+
 '''
 
 import pandas as pd
@@ -55,16 +37,12 @@ import numpy as np
 pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warning (add column for local time in parse_temperature())
 
 
-
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
 data_folder = 'Winter-new'
 DATE = 'Winter 2018-19' # for output filename
 
-
-
 data = os.listdir(data_folder) #object to pass in the filenames
-
 
 # lat lon for each timezone
 pacific_lon = [-125, -114] #ish
@@ -87,10 +65,12 @@ def ns_to_df(filename):
     df = nc_data.to_dataframe()
     df = df.reset_index()
     
-    # quick check for errors
-    assert df['TS'].min() > 216.5 # a bit warmer than -70F (record low in US excluding Alaska)
-    assert df['TS'].max() < 330 # a bit colder than 134F (recod high in US)
-    
+    # quick check for temperature entering errors/typos
+    assert df['T2M'].min() > 216.5 # a bit warmer than -70F (record low in US excluding Alaska)
+    assert df['T2M'].max() < 330 # a bit colder than 134F (recod high in US)
+    assert df['T2MDEW'].min() > 216.5 # a bit warmer than -70F (record low in US excluding Alaska)
+    assert df['T2MDEW'].max() < 330 # a bit colder than 134F (recod high in US)
+
     return df
 
 
@@ -140,7 +120,7 @@ def add_alt_temps(df):
     df['wind_speed_(mph)'] = np.sqrt(df['U10M']**2 + df['V10M']**2)*(2.236942)
     
     # add temp in F
-    df['temperature_(F)'] = (df['TS'] - 273.15)*1.8000 + 32.00
+    #df['temperature_(F)'] = (df['TS'] - 273.15)*1.8000 + 32.00
     df['2mtemperature_(F)'] = (df['T2M'] - 273.15)*1.8000 + 32.00
     # add wind chill (F) 
     # windchill only if temperature is 50F or below and wind is 3mph or faster
@@ -159,9 +139,11 @@ def add_alt_temps(df):
                                     [df['wind_speed_(mph)']]*units.mph).magnitude[0]),
                                     df['2mtemperature_(F)'])
 
-    # works but .apply might be better???
+    
     # https://www.geeksforgeeks.org/python-pass-multiple-arguments-to-map-function/
-    df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
+    #df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
+    # https://stackoverflow.com/questions/28457149/how-to-map-a-function-using-multiple-columns-in-pandas
+    df['Relative_Humidity'] = df.apply(lambda x: relative_humidity(x['T2M'], x['T2MDEW']), axis = 1)
 
     # add heat index
     # heat index only if 80F or higher
@@ -172,7 +154,7 @@ def add_alt_temps(df):
                                             df['2mtemperature_(F)'])
 
     # add dummy for hr below freezing
-    df['below_freezing'] = df['TS'].apply(lambda x: 1 if x <= 273.15 else 0)
+    #df['below_freezing'] = df['TS'].apply(lambda x: 1 if x <= 273.15 else 0)
     # df['below_freezing'] = df['below_freezing'].astype(int)
     
     return df
@@ -243,13 +225,13 @@ def aggrogate(df):
        
     grouped = df.groupby(['lat', 'lon']).agg({'2mtemperature_(F)': ['mean', 'min'], 
                                               'with_windchill_(F)': ['mean', 'min'],
-                                              'with_heatindex_(F)': ['mean', 'max'],
-                                                          'below_freezing': 'sum'})
+                                              'with_heatindex_(F)': ['mean', 'max']})#,
+                                                          #'below_freezing': 'sum'})
     
     grouped.columns = ['average_temp', 'min_daily_temp', 
                        'average_temp_with_windchill', 'min_daily_temp_with_windchill',
-                       'average_temp_with_hi', 'max_daily_temp_with_hi',
-                       'hrs_below_freezing']
+                       'average_temp_with_hi', 'max_daily_temp_with_hi']#,
+                       #'hrs_below_freezing']
     
     final = grouped.reset_index()
     
@@ -282,7 +264,7 @@ def get_one_day(filename):
     
     return final_df
 
-
+'''
 filename = data[0]
 df = ns_to_df(filename)
 pst = get_schoolhours(filename, df, pacific_lon, time_deltas['pacific'])
@@ -292,6 +274,7 @@ est = get_schoolhours(filename, df, eastern_lon, time_deltas['eastern'])
 conc_df = pd.concat([pst, mst, cst, est], ignore_index=True)
 df1 = add_alt_temps(conc_df)      
 df1.to_csv('one_day.csv')
+'''
 
 def agg_month():
     '''
@@ -312,8 +295,8 @@ def agg_month():
                                                         'average_temp_with_windchill': 'mean',
                                                         'min_daily_temp_with_windchill': ['mean', 'min'],
                                                         'average_temp_with_hi':['mean'],
-                                                         'max_daily_temp_with_hi':['mean'],
-                                                        'hrs_below_freezing': ['mean','sum']})
+                                                         'max_daily_temp_with_hi':['mean']})#,
+                                                        #'hrs_below_freezing': ['mean','sum']})#,
                                                         #'day_below_freezing': 'sum'})
 
     #month_grouped.head() #debug
@@ -321,12 +304,12 @@ def agg_month():
                             'average_min_daily_temp', 'min_min_daily_temp',
                             'average_windchill',
                             'average_min_daily_windchill', 'min_min_daily_windchill',
-                            'average_hi', 'average_max_daily_hi',
-                            'avg_hrs_below_fr', 'total_hr_below_fr']
+                            'average_hi', 'average_max_daily_hi']#,
+                            #'avg_hrs_below_fr', 'total_hr_below_fr']
     
     month_final = month_grouped.reset_index()
 
-    month_final.to_csv('{} temp and wind.csv'.format(DATE))
+    month_final.to_csv('{} temperature.csv'.format(DATE))
  
 
 if __name__ == "__main__":

@@ -243,12 +243,12 @@ def aggrogate(df):
        
     grouped = df.groupby(['lat', 'lon']).agg({'2mtemperature_(F)': ['mean', 'min'], 
                                               'with_windchill_(F)': ['mean', 'min'],
-                                              'with_heatindex_(F)': ['mean', 'max']
+                                              'with_heatindex_(F)': ['mean', 'max'],
                                                           'below_freezing': 'sum'})
     
     grouped.columns = ['average_temp', 'min_daily_temp', 
                        'average_temp_with_windchill', 'min_daily_temp_with_windchill',
-                       'average_temp_with_hi', 'max_daily_temp_with_hi'
+                       'average_temp_with_hi', 'max_daily_temp_with_hi',
                        'hrs_below_freezing']
     
     final = grouped.reset_index()
@@ -321,7 +321,7 @@ def agg_month():
                             'average_min_daily_temp', 'min_min_daily_temp',
                             'average_windchill',
                             'average_min_daily_windchill', 'min_min_daily_windchill',
-                            'average_hi', 'average_max_daily_hi'
+                            'average_hi', 'average_max_daily_hi',
                             'avg_hrs_below_fr', 'total_hr_below_fr']
     
     month_final = month_grouped.reset_index()

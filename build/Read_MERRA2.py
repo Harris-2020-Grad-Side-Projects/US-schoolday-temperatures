@@ -59,7 +59,7 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
 data_folder = 'Winter-new'
-DATE = 'Winter-new' # for output filename
+DATE = 'Winter 2018-19' # for output filename
 
 
 
@@ -123,6 +123,13 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
 
     return time_zone_df
 
+def relative_humidity(temp, dewpt):
+    '''input columns temps in Kelvin
+    '''
+    return metpy.calc.relative_humidity_from_dewpoint(
+                            [temp]*units.K,
+                            [dewpt]*units.K).magnitude[0]
+
 def add_alt_temps(df):
     '''
     adds wind speed, wind chill, temperature in F and hrs below freezing
@@ -137,6 +144,7 @@ def add_alt_temps(df):
     df['2mtemperature_(F)'] = (df['T2M'] - 273.15)*1.8000 + 32.00
     # add wind chill (F) 
     # windchill only if temperature is 50F or below and wind is 3mph or faster
+    '''
     df['with_windchill_(F)'] = np.where(
                                     (df['2mtemperature_(F)']<= 50) & (df['wind_speed_(mph)']>=3), 
                                     (35.74 
@@ -144,7 +152,25 @@ def add_alt_temps(df):
                                      - 35.75*df['wind_speed_(mph)']**0.16
                                      + 0.4275*df['2mtemperature_(F)']*df['wind_speed_(mph)']**0.16),
                                     df['2mtemperature_(F)'])
-    
+    '''
+    df['with_windchill_(F)'] = np.where(
+                                (df['2mtemperature_(F)'] <= 50) & (df['wind_speed_(mph)'] >= 3), 
+                                    (metpy.calc.windchill([df['2mtemperature_(F)']]*units.degF,
+                                    [df['wind_speed_(mph)']]*units.mph).magnitude[0]),
+                                    df['2mtemperature_(F)'])
+
+    # works but .apply might be better???
+    # https://www.geeksforgeeks.org/python-pass-multiple-arguments-to-map-function/
+    df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
+
+    # add heat index
+    # heat index only if 80F or higher
+    df['with_heatindex_(F)'] = np.where(
+                                        (df['2mtemperature_(F)'] >= 80), 
+                                            (metpy.calc.heat_index([df['2mtemperature_(F)']]*units.degF,
+                                            [df['Relative_Humidity']]*units.dimensionless).magnitude[0]), 
+                                            df['2mtemperature_(F)'])
+
     # add dummy for hr below freezing
     df['below_freezing'] = df['TS'].apply(lambda x: 1 if x <= 273.15 else 0)
     # df['below_freezing'] = df['below_freezing'].astype(int)
@@ -217,10 +243,12 @@ def aggrogate(df):
        
     grouped = df.groupby(['lat', 'lon']).agg({'2mtemperature_(F)': ['mean', 'min'], 
                                               'with_windchill_(F)': ['mean', 'min'],
+                                              'with_heatindex_(F)': ['mean', 'max']
                                                           'below_freezing': 'sum'})
     
     grouped.columns = ['average_temp', 'min_daily_temp', 
                        'average_temp_with_windchill', 'min_daily_temp_with_windchill',
+                       'average_temp_with_hi', 'max_daily_temp_with_hi'
                        'hrs_below_freezing']
     
     final = grouped.reset_index()
@@ -283,6 +311,8 @@ def agg_month():
                                                         'min_daily_temp': ['mean', 'min'],
                                                         'average_temp_with_windchill': 'mean',
                                                         'min_daily_temp_with_windchill': ['mean', 'min'],
+                                                        'average_temp_with_hi':['mean'],
+                                                         'max_daily_temp_with_hi':['mean'],
                                                         'hrs_below_freezing': ['mean','sum']})
                                                         #'day_below_freezing': 'sum'})
 
@@ -291,6 +321,7 @@ def agg_month():
                             'average_min_daily_temp', 'min_min_daily_temp',
                             'average_windchill',
                             'average_min_daily_windchill', 'min_min_daily_windchill',
+                            'average_hi', 'average_max_daily_hi'
                             'avg_hrs_below_fr', 'total_hr_below_fr']
     
     month_final = month_grouped.reset_index()

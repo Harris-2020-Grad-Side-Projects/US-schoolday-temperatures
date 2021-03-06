@@ -29,6 +29,9 @@ def relative_humidity(temp, dewpt):
 # works but .apply might be better???
 # https://www.geeksforgeeks.org/python-pass-multiple-arguments-to-map-function/
 df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
+# both took a while!
+# https://stackoverflow.com/questions/28457149/how-to-map-a-function-using-multiple-columns-in-pandas
+df['Relative_Humidity'] = df.apply(lambda x: relative_humidity(x['T2M'], x['T2MDEW']), axis = 1)
 
  # add heat index
 # heat index only if 80F or higher

@@ -19,6 +19,11 @@ TS = surface skin temperature
 U10M = 10-meter eastward wind
 V10M = 10-meter northward wind
 Format: netCDF
+
+#Downlaoded 3/6/21
+#Summer
+Date Range: 2019-06-20 to 2019-09-20
+Region: -125.771, 24.434, -65.83, 50.625 (Search and Crop)
     
 Current code converts to pandas df, breaks into time zones, subsets to school hours only and aggregates
 Code also calculates windspeed, uses this to calculate windchill, and adds this variable 
@@ -143,8 +148,13 @@ def add_alt_temps(df):
     # https://www.geeksforgeeks.org/python-pass-multiple-arguments-to-map-function/
     #df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
     # https://stackoverflow.com/questions/28457149/how-to-map-a-function-using-multiple-columns-in-pandas
-    df['Relative_Humidity'] = df.apply(lambda x: relative_humidity(x['T2M'], x['T2MDEW']), axis = 1)
-
+    #df['Relative_Humidity'] = df.apply(lambda x: relative_humidity(x['T2M'], x['T2MDEW']), axis = 1)
+    df['Relative_Humidity'] = np.where(
+                                    (df['2mtemperature_(F)'] >= 80), 
+                                        (metpy.calc.relative_humidity_from_dewpoint(
+                                            [df['T2M']]*units.K,
+                                            [df['T2MDEW']]*units.K).magnitude[0]), 
+                                        np.NAN)
     # add heat index
     # heat index only if 80F or higher
     df['with_heatindex_(F)'] = np.where(

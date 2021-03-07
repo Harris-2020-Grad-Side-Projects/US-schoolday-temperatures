@@ -38,14 +38,16 @@ import xarray as xr
 import datetime
 import os
 import numpy as np
+import metpy.calc 
+from metpy.units import units
 
 pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warning (add column for local time in parse_temperature())
 
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
-data_folder = 'Winter-new'
-DATE = 'Winter 2018-19' # for output filename
+data_folder = 'test_MERRA2_data'
+DATE = 'Summer 2019' # for output filename
 
 data = os.listdir(data_folder) #object to pass in the filenames
 

@@ -11,7 +11,7 @@ Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimil
 Download Method: Get File Subsets using the GES DISC Subsetter
 Date Range: 2018-12-21 to 2019-03-19 #for Winter
 Region: -125.068, 24.258, -66.533, 50.273 (Search and Crop)
-Time of Day: 11:30 to 23:30
+Time of Day: 11:30 to 23:30 (UTC)
 Variables:
 T2M = 2-meter air temperature
 T2MDEW = dew point temperature at 2 m
@@ -47,16 +47,20 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
 data_folder = 'test_MERRA2_data'
-DATE = 'Summer 2019' # for output filename
+DATE = 'test' # for output filename
 
 data = os.listdir(data_folder) #object to pass in the filenames
 
+### Need to deal with dailight saveings time 
 # lat lon for each timezone
 pacific_lon = [-125, -114] #ish
 mountain_lon = [-114, -102] #ish
 central_lon = [-102, -85.5] #ish
 eastern_lon = [-85.5, -65] #ish
+# time delta compared to UTC
 time_deltas = {'pacific': 8, 'mountain':7, 'central':6, 'eastern':5}
+# dst -March 15th:
+time_deltas_dst = {'pacific': 7, 'mountain':6, 'central':5, 'eastern':4}
 
 def ns_to_df(filename):
     '''input: ns file from MERRA2 (satelite data)
@@ -95,8 +99,12 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
     # add local time 
     # throws a warning (both ways shown here)
     #time_zone_df['local_time'] = time_zone_df['time'] - datetime.timedelta(hours=time_delta)
-    time_zone_df['local_time'] = time_zone_df['time'].apply(lambda x: x - datetime.timedelta(hours=time_delta))
-    
+    for i in enumerate(time_zone_df['time']):
+        if time_zone_df['time'] < datetime.date(year = int('20'+filename[-9:-7]), month = 3, day = 15):
+            time_zone_df['local_time'] = time_zone_df['time'].apply(lambda x: x - datetime.timedelta(hours=time_delta))
+        else:
+            time_zone_df['local_time'] = time_zone_df['time'].apply(lambda x: x - datetime.timedelta(hours=time_delta-1))
+                    
     
     #subset to school-hrs only (8:30AM-3:30PM)
     school_str = pd.to_datetime('{} 8:30:00'.format(date))
@@ -110,6 +118,7 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
 
     return time_zone_df
 
+# not in use
 def relative_humidity(temp, dewpt):
     '''input columns temps in Kelvin
     '''
@@ -146,7 +155,7 @@ def add_alt_temps(df):
                                     [df['wind_speed_(mph)']]*units.mph).magnitude[0]),
                                     df['2mtemperature_(F)'])
 
-    
+    # add relative humidity -for heat index calculations
     # https://www.geeksforgeeks.org/python-pass-multiple-arguments-to-map-function/
     #df['Relative_Humidity'] = list(map(relative_humidity, df['T2M'],df['T2MDEW']))
     # https://stackoverflow.com/questions/28457149/how-to-map-a-function-using-multiple-columns-in-pandas
@@ -184,6 +193,7 @@ def heat_index(df):
     
     # add relative humidity RH
     # multiple equations!
+    # https://mathscinotes.com/wp-content/uploads/2016/03/87878main_H-937.pdf
     # https://earthscience.stackexchange.com/questions/16570/how-to-calculate-relative-humidity-from-temperature-dew-point-and-pressure
     
     #paper on it https://mathscinotes.com/wp-content/uploads/2016/03/87878main_H-937.pdf

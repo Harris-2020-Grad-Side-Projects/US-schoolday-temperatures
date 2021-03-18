@@ -57,10 +57,7 @@ pacific_lon = [-125, -114] #ish
 mountain_lon = [-114, -102] #ish
 central_lon = [-102, -85.5] #ish
 eastern_lon = [-85.5, -65] #ish
-# time delta compared to UTC
-time_deltas = {'pacific': 8, 'mountain':7, 'central':6, 'eastern':5}
-# dst -March 15th:
-time_deltas_dst = {'pacific': 7, 'mountain':6, 'central':5, 'eastern':4}
+
 
 def ns_to_df(filename):
     '''input: ns file from MERRA2 (satelite data)
@@ -99,12 +96,8 @@ def get_schoolhours(filename, df, time_zone_lons, time_delta):
     # add local time 
     # throws a warning (both ways shown here)
     #time_zone_df['local_time'] = time_zone_df['time'] - datetime.timedelta(hours=time_delta)
-    for i in enumerate(time_zone_df['time']):
-        if time_zone_df['time'] < datetime.date(year = int('20'+filename[-9:-7]), month = 3, day = 15):
-            time_zone_df['local_time'] = time_zone_df['time'].apply(lambda x: x - datetime.timedelta(hours=time_delta))
-        else:
-            time_zone_df['local_time'] = time_zone_df['time'].apply(lambda x: x - datetime.timedelta(hours=time_delta-1))
-                    
+    time_zone_df['local_time'] = time_zone_df['time'].apply(lambda x: x - datetime.timedelta(hours=time_delta))
+                   
     
     #subset to school-hrs only (8:30AM-3:30PM)
     school_str = pd.to_datetime('{} 8:30:00'.format(date))
@@ -307,6 +300,17 @@ def agg_month():
                             
     for f in data:
         if f.endswith('.nc'):
+            if datetime.date(year = int(f[-15:-11]), 
+                            month= int(f[-11:-9]), 
+                            day = int(f[-9:-7])) < datetime.date(year = int(f[-15:-11]), 
+                                                                month = 3, day = 10):
+            # time delta compared to UTC
+                time_deltas = {'pacific': 8, 'mountain':7, 'central':6, 'eastern':5}
+            # dst -March 15th:
+            else:
+                time_deltas = {'pacific': 7, 'mountain':6, 'central':5, 'eastern':4}
+
+        
             conc_df = get_one_day(f)
             month_df = pd.concat([month_df, conc_df], ignore_index=True)
 

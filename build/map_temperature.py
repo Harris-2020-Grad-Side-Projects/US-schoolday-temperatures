@@ -1,50 +1,49 @@
+import os
 import pandas as pd
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mticker
 import cartopy.feature as cf 
 import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap, BoundaryNorm
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
 
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures')
 date = 'Summer 2019'#'Winter 2018-19'#
-
-#df = pd.read_csv('{} temperature.csv'.format(date))
 data_folder = 'Data'
 filename = '{} temperature.csv'.format(date)
-file = os.path.join(data_folder, filename)
+use_file = os.path.join(data_folder, filename)
 
-df = pd.read_csv(file)
+df = pd.read_csv(use_file)
 pilot_df = pd.read_csv(os.path.join(data_folder, 'pilot_schools.csv'))
 
 colors = {110.0: '#a50026',
-        100.0: '#d73027',
-        90.0: '#cb181d', #'#e31a1c', #'#f46d43',
-        80.0: '#f16913', #'#fdae61',
-        70.0:'#feb24c',
-        60.0:'#fed976',
-        50.0:'#ffffcc',
-        40.0:'#99d8c9',
-        
-        30.0: '#74add1',
-        20.0: '#4575b4',
-        10.0: '#313695',
-        0.0: '#542788',
-        -10.0: '#3f007d',
-        -20.0: '#2d004b',
-        -30.0: '#252525'}
+          100.0: '#d73027',
+          90.0: '#cb181d', 
+          80.0: '#f16913',
+          70.0:'#feb24c',
+          60.0:'#fed976',
+          50.0:'#ffffcc',
+          40.0:'#99d8c9',
+          30.0: '#74add1',
+          20.0: '#4575b4',
+          10.0: '#313695',
+          0.0: '#542788',
+         -10.0: '#3f007d',
+         -20.0: '#2d004b',
+         -30.0: '#252525'}
 
 
 def contouform_map(df, values, title, date, colors, 
-                   show_pilot_schools = False, pilot_df = None, 
-                   marker_color = 'red', replace_duplicate_high = False,
-                  remove_duplicate_high = False, add_citation = False, citation_text = ''):
+                   show_pilot_schools = False, pilot_df = None, marker_color = 'red', 
+                   replace_duplicate_high = False, remove_duplicate_high = False,
+                   add_citation = False, citation_text = ''):
     '''values: the column name to use for temperature values
         title: what is in that column (for the plot title)
         date: month and year of the data (for the plot title)
+        colors: dictionary of temperature color pairs,
     '''
     # Pivot data and apply meshgrid so plotable as contourform plot
     #https://stackoverflow.com/questions/24032282/create-contour-plot-from-pandas-groupby-dataframe

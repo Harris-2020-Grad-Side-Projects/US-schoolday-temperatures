@@ -47,12 +47,9 @@ def contouform_map(df, values, title, date, colors,
         show_pilot_schools: overlays a scatterplot with data in pilot_df
         pilot_df: df of pilot school locations under colnames 'lan' and 'lon'
         marker_color: color of schatter plot points (only shown if show_pilot_schools is ture)
-        replace_duplicate_high: for summer, replaced the automatically generated color for 
-        temps just above 100 with a specific color (hard coded)
-        remove_duplicate_high: for winter, there are some points with temps just above 80
-        in the ocean and that are averaged away in the contour, these are not relevant  to the map
-        setting this to true removes the over 80 color from the colorbar
-        add_citation: if true adds some citation text to the bottom (hardcoded) 
+        replace_duplicate_high: input for fixed_colors()
+        remove_duplicate_high: input for fixed_colors()
+        add_citation: runs add_citation_text() -if true adds some citation text to the bottom
         set_extent: I grabed slightly different data ranges for summer and winter, if set_extent = True
         it resolves this discrepency on the summer data
     '''
@@ -82,37 +79,10 @@ def contouform_map(df, values, title, date, colors,
     # https://coderzcolumn.com/tutorials/data-science/cartopy-basic-maps-scatter-map-bubble-map-and-connection-map 
 
     ## set colors and bins -currently every 10 degrees F
-    use_colors = []
-    rounded_temps = []
-
-    for i in df[values]:
-        if round(i,0) in colors.keys():
-            rounded_temps.append(round(i,0))
-
-    norms = sorted(list(set(rounded_temps)))  
+    norms, cmap, norm = fixed_colors(df, values, colors, 
+                                        replace_duplicate_high = replace_duplicate_high, 
+                                        remove_duplicate_high = remove_duplicate_high)
     
-    # deal with boundries (e.g min of 9 F needs to go to 0, max of 61F needs to go to 70)
-    if df[values].min()<norms[0]:
-        norms = [round(df[values].min()-5, -1)] + norms
-        
-    if df[values].max()>norms[-1]:
-        norms.append(round(df[values].max()+4, -1))    
-   
-    # get colors from the colors dict
-    for i in norms:
-        use_colors.append(colors[i])
-    
-    # deal with duplicate colors at the high end
-    if len((set(norms))) < len(norms):
-        if replace_duplicate_high:
-            use_colors[-1] = '#b30000'
-        elif remove_duplicate_high:
-            use_colors = use_colors[:-2]
-            norms = norms[:-1]
-   
-    cmap = ListedColormap(use_colors)
-    norm = BoundaryNorm(norms, cmap.N)
-
     # plot
     plt.contourf(lon, lat, Z, transform=ccrs.PlateCarree(), levels=len(norms)-1,
                  cmap=cmap, norm=norm)
@@ -128,17 +98,7 @@ def contouform_map(df, values, title, date, colors,
     # this isn't a clean way to do this, but wrap isn't working here
     # add citation text to the bottom left
     if add_citation:
-        plt.text(0.00, -0.03, 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information', 
-                 ha='left', transform=ax.transAxes)
-        plt.text(0.00, -0.06, 'Services Center(GES DISC). Map created by Sarah Gill, MPP. 2021', 
-                 ha='left', transform=ax.transAxes)
-        '''
-        plt.text(0.00, -0.03, citation_text, 
-                 ha='left', wrap=True, transform=ax.transAxes)
-        plt.text(0.00, -0.05,  'Map created by Sarah Gill, MPP. 2021', 
-                 ha='left', transform=ax.transAxes)
-        '''
-        #https://stackoverflow.com/questions/43087087/matplotlib-set-the-limits-for-text-wrapping
+        add_citation_text(ax=ax)
 
     # add points for pilot school locations   
     if show_pilot_schools:
@@ -147,51 +107,6 @@ def contouform_map(df, values, title, date, colors,
     else:
         plt.savefig('output/{} (F) 8:30AM-3:30PM {}'.format(title, date), bbox_inches = 'tight')
     
-
-def contouform_map_test(df, values, title, date, levels, cmap, norm,
-                        set_extent = False):
-    '''values: the column name to use for temperature values
-        title: what is in that column (for the plot title)
-        date: month and year of the data (for the plot title)
-        colors: dictionary of temperature-color pairs
-        Output is a matplotlib object
-    '''
-    # Pivot data and apply meshgrid so plotable as contourform plot
-    #https://stackoverflow.com/questions/24032282/create-contour-plot-from-pandas-groupby-dataframe
-    df_pivoted = df.pivot(index = 'lat', columns = 'lon', values = values)
-    df_pivoted.columns
-    X=df_pivoted.columns
-    Y=df_pivoted.index.values
-    Z=df_pivoted.values
-    lon,lat = np.meshgrid(X, Y)
-    
-    fig = plt.figure(figsize=(15,13)) #20,18
-    
-    # set geo axes
-    ax = plt.axes(projection=ccrs.Mercator()) 
-
-    if set_extent:
-        # set map extent -summer only
-        extent = (X.min(), X.max(), Y.min(), Y.max()-4.5) 
-        ax.set_extent(extent)
-    
-    # add lines for North America
-    ax.coastlines(resolution="110m",linewidth=0.9)
-    # add lines for State boundries
-    ax.add_feature(cf.STATES, linewidth = 0.9)
-    # https://coderzcolumn.com/tutorials/data-science/cartopy-basic-maps-scatter-map-bubble-map-and-connection-map 
-
-    # plot
-    plt.contourf(lon, lat, Z, transform=ccrs.PlateCarree(), levels=len(levels)-1,
-                 cmap=cmap, norm=norm)
-
-    cb = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax, 
-                      orientation="vertical", pad=0.02, aspect=16, shrink=0.5)
-    cb.ax.invert_yaxis() #inverts color bar so low to high 
-    cb.set_label('\u00b0F',size=14,rotation=0,labelpad=4) 
-    cb.ax.tick_params(labelsize=12)
-    
-    plt.title('{} 8:30AM-3:30PM {}'.format(title, date), size=16)
 
 # used in contouform_map
 def fixed_colors(df, values, colors, 
@@ -244,7 +159,8 @@ def fixed_colors(df, values, colors,
 
     return norms, cmap, norm
 
-def add_citation():
+# used in contouform_map
+def add_citation_text(ax):
     # this isn't a clean way to do this, but wrap isn't working here
     # add citation text to the bottom left
     plt.text(0.00, -0.03, 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information', 
@@ -254,15 +170,9 @@ def add_citation():
 
     #https://stackoverflow.com/questions/43087087/matplotlib-set-the-limits-for-text-wrapping
 
-levels, cmap, norm = fixed_colors(df, 'average_hi', colors, replace_duplicate_high = True)
 
-contouform_map_test(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
-                    date, levels, cmap, norm, set_extent = True)
-add_citation()
-plt.savefig('test')
 
-'''
 contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
                date, colors, marker_color='blue', replace_duplicate_high = True,
                add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
-'''
+

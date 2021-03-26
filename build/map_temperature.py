@@ -54,7 +54,7 @@ def contouform_map(df, values, title, date, colors,
     Z=df_pivoted.values
     lon,lat = np.meshgrid(X, Y)
     
-    fig = plt.figure(figsize=(20,18)) #12,10
+    fig = plt.figure(figsize=(16,14)) #20,18
     
     # set geo axes
     ax = plt.axes(projection=ccrs.Mercator()) 
@@ -110,24 +110,24 @@ def contouform_map(df, values, title, date, colors,
     cb = plt.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax, 
                       orientation="vertical", pad=0.02, aspect=16, shrink=0.5)
     cb.ax.invert_yaxis() #interts color bar so low to high 
-    cb.set_label('\u00b0F',size=18,rotation=0,labelpad=15)
-    cb.ax.tick_params(labelsize=15)
+    cb.set_label('\u00b0F',size=14,rotation=0,labelpad=12) #18
+    cb.ax.tick_params(labelsize=12)
     
-    plt.title('{} 8:30AM-3:30PM {}'.format(title, date), size=22)
+    plt.title('{} 8:30AM-3:30PM {}'.format(title, date), size=18)
     
     # this is a crazy way to do this, but wrap isn't working 
     # add citation text to the bottom left
     if add_citation:
-        plt.text(0.00, -0.03, 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and', 
+        '''plt.text(0.00, -0.03, 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and', 
                  ha='left', transform=ax.transAxes, fontsize = 14)
         plt.text(0.00, -0.06, 'Information Services Center(GES DISC). Map created by Sarah Gill, MPP. 2021', 
                  ha='left', transform=ax.transAxes, fontsize = 14)
-        
-        '''plt.text(0.00, -0.02, citation_text, 
-                 ha='left', transform=ax.transAxes)
-        plt.text(0.00, -0.04,  'Map created by Sarah Gill, MPP. 2021', 
-                 ha='left', transform=ax.transAxes)
         '''
+        plt.text(0.00, -0.03, citation_text, 
+                 ha='left', wrap=True, transform=ax.transAxes)
+        plt.text(0.00, -0.05,  'Map created by Sarah Gill, MPP. 2021', 
+                 ha='left', transform=ax.transAxes)
+        
        
         '''
         plt.text(0.01, 0.09, 'Mapping and information based on data from', 
@@ -146,10 +146,10 @@ def contouform_map(df, values, title, date, colors,
         plt.scatter(pilot_df['lon'], pilot_df['lat'], marker = 7, color = marker_color, transform=ccrs.PlateCarree())
         plt.savefig('output/{} (F) 8:30AM-3:30PM {} with pilot schools'.format(title, date))
     else:
-        plt.savefig('output/{} (F) 8:30AM-3:30PM {}'.format(title, date))
+        plt.savefig('output/{} (F) 8:30AM-3:30PM {}'.format(title, date), bbox_inches = 'tight')
     
 
 contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
                date, colors, marker_color='blue', replace_duplicate_high = True,
-               add_citation = True)
+               add_citation = True, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
 

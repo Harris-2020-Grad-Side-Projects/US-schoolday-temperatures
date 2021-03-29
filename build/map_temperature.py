@@ -202,7 +202,8 @@ def run_winter():
                     show_pilot_schools = True, pilot_df = pilot_df,
                     add_citation = True)
     
-run_winter()   
+run_winter()  
+run_summer() 
     
 
 date = 'Winter 2018-19'

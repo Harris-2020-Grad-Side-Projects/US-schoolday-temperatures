@@ -11,6 +11,7 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
 
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures')
+data_folder = 'Data'
 
 colors = {110.0: '#a50026',
           100.0: '#d73027',
@@ -149,6 +150,8 @@ def fixed_colors(df, values, colors,
    
     cmap = ListedColormap(use_colors)
     norm = BoundaryNorm(norms, cmap.N)
+    print(norms)
+    print(use_colors)
 
     return norms, cmap, norm
 
@@ -165,9 +168,7 @@ def add_citation_text(ax):
 
 
 def run_summer():
-
     date = 'Summer 2019'#'Winter 2018-19'#
-    data_folder = 'Data'
     filename = '{} temperature.csv'.format(date)
     use_file = os.path.join(data_folder, filename)
     df = pd.read_csv(use_file)
@@ -175,19 +176,43 @@ def run_summer():
 
 
     contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
-               date, colors, marker_color='blue', replace_duplicate_high = True,
+               date, colors, replace_duplicate_high = True,
                add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
 
+    contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
+               date, colors, replace_duplicate_high = True,
+               show_pilot_schools = True, pilot_df = pilot_df, marker_color='blue',
+               add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
 
     contouform_map(df, 'average_max_daily_hi', 'Average Daily High (with Heat Index)', 
                date, colors, add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
 
 def run_winter():
     date = 'Winter 2018-19'
-    data_folder = 'Data'
     filename = '{} temperature.csv'.format(date)
     use_file = os.path.join(data_folder, filename)
     df = pd.read_csv(use_file)
-    pilot_df = pd.read_csv(os.path.join(data_folder, 'pilot_schools.csv'))
+
+    contouform_map(df, 'average_windchill', 'Average Daily Temperature (with Wind Chill)', 
+                    date, colors, remove_duplicate_high = True, 
+                    add_citation = True)
+
+    contouform_map(df, 'average_windchill', 'Average Daily Temperature (with Wind Chill)', 
+                    date, colors, remove_duplicate_high = True, 
+                    show_pilot_schools = True, pilot_df = pilot_df,
+                    add_citation = True)
+    
+run_winter()   
+    
+
+date = 'Winter 2018-19'
+data_folder = 'Data'
+filename = '{} temperature.csv'.format(date)
+use_file = os.path.join(data_folder, filename)
+df = pd.read_csv(use_file)
+
+contouform_map(df, 'average_min_daily_windchill', 'Average Daily Low (with Wind Chill)', 
+               date, colors, remove_duplicate_high = True,
+              add_citation = True)
 
 

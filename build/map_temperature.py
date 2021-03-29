@@ -11,13 +11,6 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
 
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures')
-date = 'Summer 2019'#'Winter 2018-19'#
-data_folder = 'Data'
-filename = '{} temperature.csv'.format(date)
-use_file = os.path.join(data_folder, filename)
-
-df = pd.read_csv(use_file)
-pilot_df = pd.read_csv(os.path.join(data_folder, 'pilot_schools.csv'))
 
 colors = {110.0: '#a50026',
           100.0: '#d73027',
@@ -171,8 +164,30 @@ def add_citation_text(ax):
     #https://stackoverflow.com/questions/43087087/matplotlib-set-the-limits-for-text-wrapping
 
 
+def run_summer():
 
-contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
+    date = 'Summer 2019'#'Winter 2018-19'#
+    data_folder = 'Data'
+    filename = '{} temperature.csv'.format(date)
+    use_file = os.path.join(data_folder, filename)
+    df = pd.read_csv(use_file)
+    pilot_df = pd.read_csv(os.path.join(data_folder, 'pilot_schools.csv'))
+
+
+    contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
                date, colors, marker_color='blue', replace_duplicate_high = True,
                add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
+
+
+    contouform_map(df, 'average_max_daily_hi', 'Average Daily High (with Heat Index)', 
+               date, colors, add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
+
+def run_winter():
+    date = 'Winter 2018-19'
+    data_folder = 'Data'
+    filename = '{} temperature.csv'.format(date)
+    use_file = os.path.join(data_folder, filename)
+    df = pd.read_csv(use_file)
+    pilot_df = pd.read_csv(os.path.join(data_folder, 'pilot_schools.csv'))
+
 

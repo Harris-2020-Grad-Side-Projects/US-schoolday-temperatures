@@ -10,12 +10,12 @@ Goddard Earth Sciences Data and Information Services Center (GES DISC), Accessed
 Dataset: MERRA-2 tavg1_2d_slv_Nx: 2d,1-Hourly,Time-Averaged,Single-Level,Assimilation,Single-Level Diagnostics V5.12.4
 Download Method: Get File Subsets using the GES DISC Subsetter
 Date Range: 2018-12-21 to 2019-03-19 #for Winter
+[Date Range New: 2020-12-21 to 2021-03-20 #for Winter
 Region: -125.068, 24.258, -66.533, 50.273 (Search and Crop)
 Time of Day: 11:30 to 23:30 (UTC)
 Variables:
 T2M = 2-meter air temperature
 T2MDEW = dew point temperature at 2 m
-TS = surface skin temperature
 U10M = 10-meter eastward wind
 V10M = 10-meter northward wind
 Format: netCDF
@@ -23,6 +23,7 @@ Format: netCDF
 #Downlaoded 3/6/21
 #Summer
 Date Range: 2019-06-20 to 2019-09-20
+*use this one! 
 Region: -125.771, 24.434, -65.83, 50.625 (Search and Crop)
     
 Current code converts to pandas df, breaks into time zones, subsets to school hours only and aggregates
@@ -46,12 +47,18 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
-data_folder = 'test_MERRA2_data'
-DATE = 'test' # for output filename
+season = 'Winter' #'Summer'
+if season == 'Winter':
+    data_folder = 'MERRA2_Winter20-21'
+    DATE = 'Winter 2020-21'  # for output filename
+elif season == 'Summer':
+    data_folder = 'MERRA2_Summer19'
+    DATE = 'Summer 2019' # for output filename
+else:
+    print('invalid season')
 
 data = os.listdir(data_folder) #object to pass in the filenames
 
-### Need to deal with dailight saveings time 
 # lat lon for each timezone
 pacific_lon = [-125, -114] #ish
 mountain_lon = [-114, -102] #ish
@@ -81,7 +88,7 @@ def ns_to_df(filename):
 
     return df
 
-
+# run in get_one_day()
 def get_schoolhours(filename, df, time_zone_lons, time_delta):
     '''input: pandas df from ns_to_df with variables 'TS', '...'
     lon boundries for the selected timezone and the time differnece from UTC
@@ -201,11 +208,11 @@ def aggrogate(df):
     return final
 
 
-def get_one_day(filename):
+def get_one_day(filename, time_deltas):
     '''
     takes an ns file, converts to pandas df (using ns_to_df)
     breaks into 4 dfs, one for each timezone, using global variables for lon boundries and 
-    time delta from UTC
+    dictionary time_deltas as difference in timezone from UTC
     adds variables using (add_alt_temps)
     aggrogates to a df for one day
     '''
@@ -243,6 +250,7 @@ def agg_month():
                             
     for f in data:
         if f.endswith('.nc'):
+            #deal with dst for 2019
             if datetime.date(year = int(f[-15:-11]), 
                             month= int(f[-11:-9]), 
                             day = int(f[-9:-7])) < datetime.date(year = int(f[-15:-11]), 
@@ -254,7 +262,7 @@ def agg_month():
                 time_deltas = {'pacific': 7, 'mountain':6, 'central':5, 'eastern':4}
 
         
-            conc_df = get_one_day(f)
+            conc_df = get_one_day(f, time_deltas)
             month_df = pd.concat([month_df, conc_df], ignore_index=True)
 
     #month_df.shape #debug
@@ -279,8 +287,12 @@ def agg_month():
     month_final = month_grouped.reset_index()
 
     month_final.to_csv('{} temperature.csv'.format(DATE))
+    
  
 
 if __name__ == "__main__":
     agg_month()
+
+
+
 

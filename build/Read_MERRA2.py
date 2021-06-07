@@ -48,9 +48,10 @@ pd.set_option('mode.chained_assignment', None) # ignore the SettingWithCopy Warn
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures/Data')
 season = 'Winter' #'Summer'
+year = '18-19' #'20-21'
 if season == 'Winter':
-    data_folder = 'MERRA2_Winter20-21'
-    DATE = 'Winter 2020-21'  # for output filename
+    data_folder = 'MERRA2_Winter{}'.format(year) #20-21
+    DATE = 'Winter 20{}'.format(year)  # for output filename
 elif season == 'Summer':
     data_folder = 'MERRA2_Summer19'
     DATE = 'Summer 2019' # for output filename

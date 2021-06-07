@@ -33,13 +33,14 @@ state_abres = ['AK', 'PR', 'HI'] # contenental US only, remove Alaska, Puerto Ri
 contenental_states = state[~state['STUSPS'].isin(state_abres)]
 #state_test.head()
 
-fig, ax = plt.subplots(figsize=(30,8))
+fig, ax = plt.subplots()#figsize=(25,8))
 #contenental_states.plot(ax=ax, color = 'none', edgecolor='black')
-gdf.plot(ax=ax, column = 'average_windchill', markersize = 10,
-         cmap = 'RdYlBu_r', legend=True)
-contenental_states.plot(ax=ax, color = 'none', edgecolor='black')
+gdf.plot(ax=ax, column = 'average_windchill', markersize = 20,
+          legend = True) #cmap = 'RdYlBu_r',
+contenental_states.plot(ax=ax, color = 'none', 
+                        edgecolor='black', alpha = 0.4)
 
 ax.axis('off')
 ax.set_title('{} 8:30AM-3:30PM {}'.format(title, date),
-            size=16)
+            size=8)
 plt.show()

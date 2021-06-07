@@ -9,6 +9,10 @@ import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
+### Reminder: set-extent is here because you downloaded summer and winter
+#with slightly different map extents, you've gotta fix that if you're goiong to avearge
+#so if you do, be sure to remove set-extent!
+
 ####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures')
 data_folder = 'Data'
@@ -32,7 +36,7 @@ colors = {110.0:'#a50026',
 
 def contouform_map(df, values, title, date, colors, 
                    show_pilot_schools = False, pilot_df = None, marker_color = 'red', 
-                   replace_duplicate_high = False, remove_duplicate_high = False,
+                   remove_duplicate_high = False,
                    add_citation = False, citation_text = '', set_extent = False):
     '''values: the column name to use for temperature values
         title: what is in that column (for the plot title)
@@ -41,7 +45,6 @@ def contouform_map(df, values, title, date, colors,
         show_pilot_schools: overlays a scatterplot with data in pilot_df
         pilot_df: df of pilot school locations under colnames 'lan' and 'lon'
         marker_color: color of schatter plot points (only shown if show_pilot_schools is ture)
-        replace_duplicate_high: input for fixed_colors()
         remove_duplicate_high: input for fixed_colors()
         add_citation: runs add_citation_text() -if true adds some citation text to the bottom
         set_extent: I grabed slightly different data ranges for summer and winter, if set_extent = True
@@ -62,7 +65,7 @@ def contouform_map(df, values, title, date, colors,
     ax = plt.axes(projection=ccrs.Mercator()) 
 
     if set_extent:
-        # set map extent -summer only
+        # set map extent -summer only (only need if you grab differently sized map extents from the data portal)
         extent = (X.min(), X.max(), Y.min(), Y.max()-4.5) 
         ax.set_extent(extent)
     

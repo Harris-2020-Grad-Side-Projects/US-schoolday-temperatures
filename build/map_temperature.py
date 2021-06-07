@@ -9,25 +9,25 @@ import matplotlib.cm as cm
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
-
+####Global Variables
 os.chdir('/Users/Sarah/Documents/GitHub/US-schoolday-temperatures')
 data_folder = 'Data'
 
-colors = {110.0: '#a50026',
-          100.0: '#d73027',
-          90.0: '#cb181d', 
-          80.0: '#f16913',
+colors = {110.0:'#a50026',
+          100.0:'#b30000', #'#d73027'
+          90.0:'#cb181d', 
+          80.0:'#f16913',
           70.0:'#feb24c',
           60.0:'#fed976',
           50.0:'#ffffcc',
           40.0:'#99d8c9',
-          30.0: '#74add1',
-          20.0: '#4575b4',
-          10.0: '#313695',
+          30.0:'#74add1',
+          20.0:'#4575b4',
+          10.0:'#313695',
           0.0: '#542788',
-         -10.0: '#3f007d',
-         -20.0: '#2d004b',
-         -30.0: '#252525'}
+         -10.0:'#3f007d',
+         -20.0:'#2d004b',
+         -30.0:'#252525'}
 
 
 def contouform_map(df, values, title, date, colors, 
@@ -73,8 +73,7 @@ def contouform_map(df, values, title, date, colors,
     # https://coderzcolumn.com/tutorials/data-science/cartopy-basic-maps-scatter-map-bubble-map-and-connection-map 
 
     ## set colors and bins -currently every 10 degrees F
-    norms, cmap, norm = fixed_colors(df, values, colors, 
-                                        replace_duplicate_high = replace_duplicate_high, 
+    norms, cmap, norm = fixed_colors(df, values, colors,  
                                         remove_duplicate_high = remove_duplicate_high)
     
     # plot
@@ -104,12 +103,10 @@ def contouform_map(df, values, title, date, colors,
 
 # used in contouform_map
 def fixed_colors(df, values, colors, 
-                 replace_duplicate_high = False, remove_duplicate_high = False):
+                 remove_duplicate_high = False):
     '''input
         values: the column name to use for temperature values,
         colors: dictionary of temperature-color pairs,
-        replace_duplicate_high: for summer, replaced the automatically generated color for 
-        temps just above 100 with a specific color (hard coded)
         remove_duplicate_high: for winter, there are some points with temps just above 80
         in the ocean and that are averaged away in the contour, these are not relevant  to the map
         setting this to true removes the over 80 color from the colorbar
@@ -141,13 +138,16 @@ def fixed_colors(df, values, colors,
         use_colors.append(colors[i])
     
     # deal with duplicate colors at the high end
-    if len((set(norms))) < len(norms):
-        if replace_duplicate_high:
-            use_colors[-1] = '#b30000'
-        elif remove_duplicate_high:
-            use_colors = use_colors[:-2]
+    if remove_duplicate_high:
+        if len((set(norms))) < len(norms): # be sure there is a duplicate before removing
+            use_colors = use_colors[:-1] # drop duplicate color
             norms = norms[:-1]
    
+    # remove last element of the color list (the upper bound is already handled above)
+    # the last color in the list duplicates this bounding ->shows one color too high at the
+    # botom of the colorbar -this fixes that duplication
+    use_colors = use_colors[:-1]
+
     cmap = ListedColormap(use_colors)
     norm = BoundaryNorm(norms, cmap.N)
     print(norms)
@@ -168,7 +168,7 @@ def add_citation_text(ax):
 
 
 def run_summer():
-    date = 'Summer 2019'#'Winter 2018-19'#
+    date = 'Summer 2019'
     filename = '{} temperature.csv'.format(date)
     use_file = os.path.join(data_folder, filename)
     df = pd.read_csv(use_file)
@@ -176,11 +176,11 @@ def run_summer():
 
 
     contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
-               date, colors, replace_duplicate_high = True,
+               date, colors, 
                add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
 
     contouform_map(df, 'average_hi', 'Average Daily Temperature (with Heat Index)', 
-               date, colors, replace_duplicate_high = True,
+               date, colors, 
                show_pilot_schools = True, pilot_df = pilot_df, marker_color='blue',
                add_citation = True, set_extent = True)#, citation_text = 'Mapping and information based on data from Global Modeling and Assimilation Office (GMAO), Goddard Earth Sciences Data and Information Services Center (GES DISC).')
 
@@ -202,18 +202,24 @@ def run_winter():
                     show_pilot_schools = True, pilot_df = pilot_df,
                     add_citation = True)
     
-run_winter()  
-run_summer() 
+#run_winter()  
+#run_summer() 
     
 
-date = 'Winter 2018-19'
+date = 'Winter 2020-21'
 data_folder = 'Data'
 filename = '{} temperature.csv'.format(date)
 use_file = os.path.join(data_folder, filename)
 df = pd.read_csv(use_file)
 
+'''
 contouform_map(df, 'average_min_daily_windchill', 'Average Daily Low (with Wind Chill)', 
                date, colors, remove_duplicate_high = True,
               add_citation = True)
+'''
+contouform_map(df, 'average_windchill', 'Average Daily Temperature (with Wind Chill)', 
+                    date, colors, remove_duplicate_high = True,
+                    add_citation = True)
+
 
 
